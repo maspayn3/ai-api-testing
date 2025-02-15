@@ -1,0 +1,22 @@
+{
+    "users": [
+      { "id": 1, "name": "Test User", "email": "test@example.com" },
+      { "id": 2, "name": "Another User", "email": "another@example.com" }
+    ],
+    "posts": [
+      { 
+        "id": 1, 
+        "title": "Test Post",
+        "body": "This is a test post",
+        "userId": 1
+      }
+    ],
+    "comments": [
+      {
+        "id": 1,
+        "postId": 1,
+        "body": "Test comment",
+        "email": "test@example.com"
+      }
+    ]
+  }
