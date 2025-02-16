@@ -1,14 +1,13 @@
 // test/setup.ts
 import { Server } from 'http';
-import JsonServer from 'json-server';
+import { create, defaults, router } from 'json-server';
 
 let server: Server;
-let router: any;
+let jsonRouter: any;
 let app: any;
 const PORT = 3002;
 export const BASE_URL = `http://localhost:${PORT}`;
 
-// Store the original data
 const originalData = {
   "users": [
     { "id": 1, "name": "Test User", "email": "test@example.com" },
@@ -32,18 +31,16 @@ const originalData = {
   ]
 };
 
-// Function to create a fresh router with original data
 const createRouter = () => {
-  // Create a deep copy of the original data to prevent modifications from affecting the source
   const freshData = JSON.parse(JSON.stringify(originalData));
-  return JsonServer.router(freshData);
+  return router(freshData);
 };
 
 beforeAll((done) => {
-  app = JsonServer.create();
-  router = createRouter();
-  app.use(JsonServer.defaults());
-  app.use(router);
+  app = create();
+  jsonRouter = createRouter();
+  app.use(defaults());
+  app.use(jsonRouter);
   server = app.listen(PORT, () => {
     console.log(`Mock API running on port ${PORT}`);
     done();
@@ -51,13 +48,11 @@ beforeAll((done) => {
 });
 
 beforeEach(() => {
-  // Completely replace the router with a fresh instance
-  router.db.setState(JSON.parse(JSON.stringify(originalData)));
+  jsonRouter.db.setState(JSON.parse(JSON.stringify(originalData)));
 });
 
 afterEach(() => {
-  // Ensure cleanup after each test
-  router.db.setState(JSON.parse(JSON.stringify(originalData)));
+  jsonRouter.db.setState(JSON.parse(JSON.stringify(originalData)));
 });
 
 afterAll((done) => {
