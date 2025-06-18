@@ -20,6 +20,13 @@ export interface TestCase {
     assertions: string[];
 }
 
+export interface ResponseData {
+    status: number;
+    statusText: string;
+    headers: Record<string, any>;
+    data: any;
+}
+
 export interface TestResult {
     testCase: TestCase;
     passed: boolean;
@@ -27,9 +34,8 @@ export interface TestResult {
     statusCode: number;
     error?: string;
     assertionResults: AssertionResult[];
-    response: AxiosResponse;
+    responseData: ResponseData;
 }
-
 export interface AssertionResult {
     assertion: string;
     passed: boolean;

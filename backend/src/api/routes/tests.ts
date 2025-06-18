@@ -1,7 +1,7 @@
-// backend/src/api/routes/tests.ts
+// backend/src/api/routes/tests.ts - UPDATED TO USE DYNAMIC RUNNER
 import { Router, Request, Response } from 'express';
 import { TestGenerator } from '../../services/testing/generator';
-import { TestRunner } from '../../services/testing/runner';
+import { DynamicTestRunner } from '../../services/testing/runner';
 import { TestCase, TestSuiteConfig, TestSuiteResult } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -9,30 +9,16 @@ const router = Router();
 
 // Store test results in memory for now
 const testResults: Record<string, TestSuiteResult> = {};
-
-// Store generated test cases
-interface GeneratedTestStore {
-    timestamp: Date;
-    apiSpec: any;
-    testCases: TestCase[];
-}
-
-const generatedTestCases: Record<string, GeneratedTestStore> = {};
+const generatedTestCases: Record<string, { timestamp: Date; apiSpec: any; testCases: TestCase[]; }> = {};
 
 router.get('/debug', (req: Request, res: Response) => {
     res.json({
         status: 'ok',
+        message: 'Using Dynamic Test Runner - Auto-discovery enabled! 🚀',
         storedData: {
             generatedTestCases: Object.keys(generatedTestCases).length,
             testResults: Object.keys(testResults).length
-        },
-        routes: [
-            { path: '/tests/generate', methods: ['POST'] },
-            { path: '/tests/run', methods: ['POST'] },
-            { path: '/tests/:id', methods: ['GET'] },
-            { path: '/tests/generated/:id', methods: ['GET'] },
-            { path: '/tests/debug', methods: ['GET'] }
-        ]
+        }
     });
 });
 
@@ -61,7 +47,8 @@ router.post('/generate', async (req: Request, res: Response) => {
                 methods: testCases.reduce((acc: Record<string, number>, tc) => {
                     acc[tc.method] = (acc[tc.method] || 0) + 1;
                     return acc;
-                }, {})
+                }, {}),
+                runnerType: 'Dynamic Auto-Discovery Runner' // 🚀 NEW INFO
             }
         });
     } catch (error) {
@@ -70,7 +57,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/tests/run - Run a test suite
+// POST /api/tests/run - Run a test suite with DYNAMIC RUNNER
 router.post('/run', async (req: Request, res: Response) => {
     try {
         const { baseUrl, generationId, apiSpec } = req.body;
@@ -95,8 +82,12 @@ router.post('/run', async (req: Request, res: Response) => {
             });
         }
 
-        const runner = new TestRunner(baseUrl);
+        // 🚀 USE DYNAMIC RUNNER
+        const runner = new DynamicTestRunner(baseUrl);
         const startTime = new Date();
+        
+        console.log(`🚀 Running ${testCases.length} tests with Dynamic Auto-Discovery...`);
+        
         const results = await Promise.all(
             testCases.map(testCase => runner.runTest(testCase))
         );
@@ -106,13 +97,20 @@ router.post('/run', async (req: Request, res: Response) => {
             total: results.length,
             passed: results.filter(r => r.passed).length,
             failed: results.filter(r => !r.passed).length,
-            duration: endTime.getTime() - startTime.getTime()
+            duration: endTime.getTime() - startTime.getTime(),
+            runnerType: 'Dynamic Auto-Discovery',
+            autoAssertions: results.reduce((total, r) => 
+                total + r.assertionResults.filter(a => a.assertion.startsWith('Auto:')).length, 0
+            ),
+            explicitAssertions: results.reduce((total, r) => 
+                total + r.assertionResults.filter(a => a.assertion.startsWith('Explicit:')).length, 0
+            )
         };
 
         const testSuiteResult: TestSuiteResult = {
             id: uuidv4(),
             config: {
-                name: `Test Run ${new Date().toISOString()}`,
+                name: `Dynamic Test Run ${new Date().toISOString()}`,
                 baseUrl,
                 apiSpec: apiSpec || generatedTestCases[generationId!].apiSpec
             },
@@ -123,6 +121,10 @@ router.post('/run', async (req: Request, res: Response) => {
         };
 
         testResults[testSuiteResult.id] = testSuiteResult;
+        
+        console.log(`✅ Test run complete: ${summary.passed}/${summary.total} passed`);
+        console.log(`🔍 Auto-discovered ${summary.autoAssertions} assertions`);
+        
         return res.json(testSuiteResult);
     } catch (error) {
         console.error('Error running tests:', error);
@@ -156,7 +158,5 @@ router.get('/generated/:id', (req: Request, res: Response) => {
         timestamp: generated.timestamp
     });
 });
-
-
 
 export const testRoutes = router;

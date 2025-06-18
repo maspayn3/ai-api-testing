@@ -1,13 +1,13 @@
 // src/services/testing/__tests__/runner.test.ts
-import { TestRunner } from '../runner';
+import { DynamicTestRunner } from '../runner';
 import { TestCase } from '../../../types';
 import { BASE_URL } from '../../../../test/setup';
 
 describe('TestRunner', () => {
-  let runner: TestRunner;
+  let runner: DynamicTestRunner;
 
   beforeEach(() => {
-    runner = new TestRunner(BASE_URL);
+    runner = new DynamicTestRunner(BASE_URL);
   });
 
   describe('Basic HTTP Methods', () => {
@@ -102,7 +102,7 @@ describe('TestRunner', () => {
         console.log('Array length test result:', {
           passed: result.passed,
           assertions: result.assertionResults,
-          data: result.response.data
+          data: result.responseData
         });
         expect(result.passed).toBe(true);
     });
